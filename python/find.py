@@ -78,6 +78,10 @@ def process_weights():
 	w.addAtoms(atom='Bi',sites=[1],orbitals=['6p'],fac=1)
 	print "w",w
 
+        bw=com.BandWeights('+bweights')
+        bw.addWeights(wds,'+bwsum')
+
+
 def make_string_def(site,element):
 
 	if(element == "Te" or element=="Bi"):
