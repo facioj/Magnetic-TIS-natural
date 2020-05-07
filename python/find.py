@@ -44,8 +44,8 @@ def from_out(max_coor,vacuum):
 
 def identify_blocks():
 	#max_coor=113.163
-	max_coor=94.266443463403874
-	vac=10
+	max_coor=113.163704713339939
+	vac=30
 	my_list = from_out(max_coor,vac)
 	#my_list2 = from_parser() #this one needs to be changed because of c shift
 
@@ -188,13 +188,15 @@ def print_bwdef(blocks,rel=False):
 				print>> file,make_string_def(atom[0],atom[1])
 	file.close()
 
-def layer_weights(blocks):
+def layer_weights(blocks,rel=False):
 	import pyfplo.common as com
 	wds=com.WeightDefinitions()
 
 	labp = ['p+1up','p+1dn','p+0up','p+0dn','p-1up','p-1dn']
+	if(rel):
+		labp = ['p3/2+3/2','p3/2-3/2','p3/2+1/2','p3/2-1/2','p1/2+1/2','p1/2-1/2']
 	labd = ['d+2up','d+2dn','d+1up','d+1dn','d+0up','d+0dn','d-1up','d-1dn','d-2up','d-2dn']
-	b_ind = 0
+	b_ind=0
 	for block in blocks:
 		length = len(block)
 		print length
@@ -215,26 +217,25 @@ def layer_weights(blocks):
 				for suffix in labp:
 					label = """Te(%(site)s)5%(suffix)s"""%locals()
 					labels_block.append(label)
-			if(atom[1]=='Mn'):
+			if(atom[1]=='Mn' and rel==False):
 				for suffix in labd:
 					label = """Mn(%(site)s)3%(suffix)s"""%locals()
 					labels_block.append(label)
         	w.addLabels(labels=labels_block,fac=1)
 		print "w",w
-		b_ind += 1
         bw=com.BandWeights('+bweights_mydef')
         bw.addWeights(wds,'+bwsum_layer_resolved')
 
-def orbital_layer_weights(blocks):
+def orbital_layer_weights(blocks,rel=False):
 	import pyfplo.common as com
 
-	labpx = ['p+1up','p+1dn']
-	labpy = ['p-1up','p-1dn']
-	labpz = ['p+0up','p+0dn']
-	b_ind = 0
-	orbs = [labpx,labpy,labpz]
+	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
 	orbs_names = ['px','py','pz']
-	for i in range(3):
+	if(rel):
+		orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
+		orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
+	b_ind = 0
+	for i in range(len(orbs)):
 		orb_name = orbs_names[i]
 		labp = orbs[i]
 		wds=com.WeightDefinitions()
@@ -262,19 +263,17 @@ def orbital_layer_weights(blocks):
         	bw=com.BandWeights('+bweights_mydef')
         	bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_layer_resolved"""%locals())
 
-def orbital_exp_decay(blocks,lambda_0=20):
+def orbital_exp_decay(blocks,lambda_0=20,rel=False):
         import pyfplo.common as com
-
-        labpx = ['p+1up','p+1dn']
-        labpy = ['p-1up','p-1dn']
-        labpz = ['p+0up','p+0dn']
-        b_ind = 0
-        orbs = [labpx,labpy,labpz]
+	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
         orbs_names = ['px','py','pz']
+        if(rel):
+                orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
+                orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
 	z_coord_0 = -1000
 	import numpy as np
 	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
-        for i in range(3):
+        for i in range(len(orbs)):
                 orb_name = orbs_names[i]
                 labp = orbs[i]
                 wds=com.WeightDefinitions()
@@ -292,7 +291,8 @@ def orbital_exp_decay(blocks,lambda_0=20):
 				assert z_coord_0 != -1000
 				rel_z = (z_coord - z_coord_0)/lambda_0
 				weight = np.exp(-rel_z)
-				print >> file, z_coord,rel_z,np.exp(-rel_z)
+				if(i==0):
+					print >> file, z_coord,rel_z,np.exp(-rel_z)
 
 				#determine label
                                 site = "{:03d}".format(site_index)
@@ -307,7 +307,6 @@ def orbital_exp_decay(blocks,lambda_0=20):
 				ind_atom += 1
 				if(atom[1]!='Mn'):
                         		w.addLabels(labels=labels_atom,fac=weight)
-                        b_ind += 1
                 bw=com.BandWeights('+bweights_mydef')
                 bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_lambda_%(lambda_0)s"""%locals())
 	file.close()
@@ -348,7 +347,6 @@ def orbital_layer_weights_rel(blocks):
 
 blocks = identify_blocks()
 #print_bwdef(blocks,rel=True)
-layer_weights(blocks)
-orbital_layer_weights(blocks)
-orbital_exp_decay(blocks,lambda_0=20)
-orbital_exp_decay(blocks,lambda_0=25)
+layer_weights(blocks,rel=True)
+orbital_layer_weights(blocks,rel=True)
+orbital_exp_decay(blocks,lambda_0=20,rel=True)
