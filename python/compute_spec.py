@@ -31,7 +31,7 @@ def compute_functions(file_name,E_max,E_min,gamma,gamma_k):
 
     return all_lor
 
-def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=400,E_max=0.3,E_min=-0.3,Ne=400,gamma_k=0.002,gamma=0.004,lambda_0=20,orbital="pz"):
+def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=200,E_max=0.5,E_min=-0.5,Ne=200,gamma_k=0.002,gamma=0.004,lambda_0=20,orbital="pz",suffix=""):
     dk = (kf-k0)/Nk
     #initialize A
     momenta = np.linspace(k0, kf+dk, Nk)
@@ -50,7 +50,7 @@ def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=400,E_max
         A = s(momenta[:,None],energies[None,:])
         A_final += A
 
-    file_output = """A_gammak_%(gamma_k)s_gammae_%(gamma)s_Nk_%(Nk)s_Ne_%(Ne)s_lambda_%(lambda_0)s_%(orbital)s"""%locals()
+    file_output = """A_gammak_%(gamma_k)s_gammae_%(gamma)s_Nk_%(Nk)s_Ne_%(Ne)s_lambda_%(lambda_0)s_%(orbital)s%(suffix)s"""%locals()
     file = open(file_output,'w')
     for i in range(len(momenta)):
       for j in range(len(energies)):
@@ -60,17 +60,38 @@ def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=400,E_max
 
     return file_output
 
-def plot_spectrum(x=None, y=None, z=None,file_name=None,title=None,save_to="out.png"):
+def sum_spectrum(file1,file2,file_output):
+    file = open(file1,'r')
+    data1 = file.readlines()
+    file.close()
+    file = open(file2,'r')
+    data2 = file.readlines()
+    file.close()
+
+    assert len(data1) == len(data2)
+
+    file = open(file_output,'w')
+
+    for i in range(len(data1)):
+        f1 = data1[i].split()
+        f2 = data2[i].split()
+        if(len(f1)>0):
+            v1 = map(eval,f1)
+            v2 = map(eval,f2)
+            print >> file, v1[0],v1[1],v1[2]+v2[2]
+        if(len(f1)==0):
+            print >> file,"\n",
+    file.close()
+
+
+def plot_spectrum(x=None, y=None, z=None,file_name=None,title=None,save_to="out.png",xgamma=0,factor=1):
     import matplotlib.pyplot as plt
 
-    fig= plt.figure(figsize=(3,5))
+    fig= plt.figure(figsize=(3,4.5))
 
     xp = []
     yp = []
     zp = []
-    factor = 3.1415 / 4.3615 
-
-    xgamma = 0.2 #np.sqrt(1./3+1./9)*factor
 
     if(x==None):
         if(file_name==None):
@@ -86,7 +107,7 @@ def plot_spectrum(x=None, y=None, z=None,file_name=None,title=None,save_to="out.
                 if(len(sp)==3):
                     vals = map(eval,sp)
                     if(J==1):
-                        xp.append(vals[0]*factor-xgamma)
+                        xp.append((vals[0]-xgamma)*factor)
                         J=0
                     if(K==1):
                         yp.append(vals[1])
@@ -104,31 +125,11 @@ def plot_spectrum(x=None, y=None, z=None,file_name=None,title=None,save_to="out.
     plt.xlabel('$k_y$ ($\AA^{-1}$)')
     plt.ylabel('$\\varepsilon$ (eV)')
     plt.xlim([-0.2,0.2])
+    plt.ylim([-0.3,0.3])
     plt.title(title)
     plt.pcolormesh(xv, yv, z,cmap=plt.cm.YlOrBr)
-    plt.pcolormesh(-xv, yv, z,cmap=plt.cm.YlOrBr)
     plt.savefig(save_to,dpi=300)
  
 
-#plot_spectrum(file_name="A_gammak_0.002_gammae_0.01_Nk_400_Ne_400_lambda_20_pz",title="$p_{3/2+1/2}, \lambda=10\AA$",save_to="U_3_32_12_lambda_10.png")
-#assert 0
 
-file_output = simulate_spectrum(file_name="+bwsum_orb_32_12_lambda_20",lambda_0=20,orbital="32_12",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{3/2+1/2}, \lambda=10\AA$",save_to="U_3_32_12_lambda_10.png")
-
-file_output = simulate_spectrum(file_name="+bwsum_orb_32_-12_lambda_20",lambda_0=20,orbital="32_-12",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{3/2-1/2}, \lambda=10\AA$",save_to="U_3_32_-12_lambda_10.png")
-
-file_output = simulate_spectrum(file_name="+bwsum_orb_12_12_lambda_20",lambda_0=20,orbital="12_12x",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{1/2+1/2}, \lambda=10\AA$",save_to="U_3_12_12_lambda_10.png")
-
-file_output = simulate_spectrum(file_name="+bwsum_orb_12_-12_lambda_20",lambda_0=20,orbital="12_-12",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{1/2-1/2}, \lambda=10\AA$",save_to="U_3_12_-12_lambda_10.png")
-
-
-file_output = simulate_spectrum(file_name="+bwsum_orb_32_32_lambda_20",lambda_0=20,orbital="32_32",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{3/2+3/2}, \lambda=10\AA$",save_to="U_3_32_32_lambda_10.png")
-
-file_output = simulate_spectrum(file_name="+bwsum_orb_32_-32_lambda_20",lambda_0=20,orbital="32_-32",gamma=0.01)
-plot_spectrum(file_name=file_output,title="$p_{3/2-3/2}, \lambda=10\AA$",save_to="U_3_32_-32_lambda_10.png")
 
