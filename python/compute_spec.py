@@ -60,13 +60,17 @@ def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=200,E_max
 
     return file_output
 
-def sum_spectrum(file1,file2,file_output):
+def sum_spectrum(file1,file2,file_output,rest=False):
     file = open(file1,'r')
     data1 = file.readlines()
     file.close()
     file = open(file2,'r')
     data2 = file.readlines()
     file.close()
+
+    factor = 1
+    if(rest==True):
+        factor = -1
 
     assert len(data1) == len(data2)
 
@@ -78,7 +82,7 @@ def sum_spectrum(file1,file2,file_output):
         if(len(f1)>0):
             v1 = map(eval,f1)
             v2 = map(eval,f2)
-            print >> file, v1[0],v1[1],v1[2]+v2[2]
+            print >> file, v1[0],v1[1],v1[2]+factor*v2[2], v1[2]-factor*v2[2]
         if(len(f1)==0):
             print >> file,"\n",
     file.close()
@@ -130,6 +134,66 @@ def plot_spectrum(x=None, y=None, z=None,file_name=None,title=None,save_to="out.
     plt.pcolormesh(xv, yv, z,cmap=plt.cm.YlOrBr)
     plt.savefig(save_to,dpi=300)
  
+
+def fermi_surface(angles,file_name, E_min=0.15,E_max=0.16,orbital="pz", layer_index = 0, suffix=""):
+
+
+    f_out = open("""FSang_%(orbital)s_layer_%(layer_index)s%(suffix)s.dat"""%locals(),'w')
+    xy = []
+    for angle in angles:
+
+        file = open("""ang_%(angle)s/%(file_name)s"""%locals(),'r')
+        data = file.readlines()
+        file.close()
+
+        for fila in data[2:]:
+            vals = map(eval,fila.split())
+            if(len(vals)>1):
+                k = vals[0]
+                x = k * np.cos(angle*1./180*np.pi)
+                y = k * np.sin(angle*1./180*np.pi)
+                bweight=0
+                if(vals[1]>E_min and vals[1] < E_max):
+                    bweight += vals[layer_index]
+                xy.append([x,y,bweight])
+                print >> f_out, angle, k, bweight
+        print >> f_out, "\n",
+
+    f_out.close()
+
+    xy.sort(key = lambda a: a[0])
+
+    f_out_xy = open("""FSxy_%(orbital)s_%(suffix)s_emin_%(E_min)s_emax_%(E_max)s.dat"""%locals(),'w')
+    for el in xy:
+        print >> f_out_xy, el[0],el[1],el[2]
+    f_out_xy.close()
+
+def fermi_surface_xy(kys,file_name, E_min=0.15,E_max=0.16,orbital="pz", layer_index = 0, suffix=""):
+
+
+    f_out = open("""FSxy_%(orbital)s_E_min_%(E_min)s_layer_%(layer_index)s%(suffix)s.dat"""%locals(),'w')
+    xy = []
+    for ky in kys:
+        file = open("""ky_%(ky)s/%(file_name)s"""%locals(),'r')
+        data = file.readlines()
+        file.close()
+        kx0 = 0
+        bweight = 0
+        for fila in data[2:]:
+            vals = map(eval,fila.split())
+            if(len(vals)>1):
+                x = vals[0]
+                if(x>kx0): #change kx
+                    print >> f_out, x, ky, bweight
+                    bweight=0
+                    kx0 = x
+                else:
+                    if(vals[1]>E_min and vals[1] < E_max):
+                        bweight += vals[layer_index]
+        print >> f_out, "\n",
+
+    f_out.close()
+
 
 
 
