@@ -44,7 +44,7 @@ def from_out(max_coor,vacuum):
 
 def identify_blocks():
 	#max_coor=113.163
-	max_coor=113.163704713339939
+	max_coor=94.266443463403874
 	vac=30
 	my_list = from_out(max_coor,vac)
 	#my_list2 = from_parser() #this one needs to be changed because of c shift
@@ -188,7 +188,7 @@ def print_bwdef(blocks,rel=False):
 				print>> file,make_string_def(atom[0],atom[1])
 	file.close()
 
-def layer_weights(blocks,rel=False):
+def layer_weights(blocks,rel=False,only_Bi=False,only_Te=False):
 	import pyfplo.common as com
 	wds=com.WeightDefinitions()
 
@@ -209,22 +209,27 @@ def layer_weights(blocks,rel=False):
 		for atom in block:
 			site_index = atom[0]
 			site = "{:03d}".format(site_index)
-			if(atom[1]=='Bi'):
+			if(atom[1]=='Bi' and not only_Te):
 				for suffix in labp:
 					label = """Bi(%(site)s)6%(suffix)s"""%locals()
 					labels_block.append(label)
-			if(atom[1]=='Te'):
+			if(atom[1]=='Te' and not only_Bi):
 				for suffix in labp:
 					label = """Te(%(site)s)5%(suffix)s"""%locals()
 					labels_block.append(label)
-			if(atom[1]=='Mn' and rel==False):
+			if(atom[1]=='Mn' and rel==False and not only_Te and not only_Bi):
 				for suffix in labd:
 					label = """Mn(%(site)s)3%(suffix)s"""%locals()
 					labels_block.append(label)
         	w.addLabels(labels=labels_block,fac=1)
 		print "w",w
         bw=com.BandWeights('+bweights_mydef')
-        bw.addWeights(wds,'+bwsum_layer_resolved')
+	output = '+bwsum_layer_resolved'
+	if(only_Bi):
+		output+="_onlyBi"
+	if(only_Te):
+		output+="_onlyTe"
+        bw.addWeights(wds,output)
 
 def orbital_layer_weights(blocks,rel=False):
 	import pyfplo.common as com
@@ -263,7 +268,7 @@ def orbital_layer_weights(blocks,rel=False):
         	bw=com.BandWeights('+bweights_mydef')
         	bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_layer_resolved"""%locals())
 
-def orbital_exp_decay(blocks,lambda_0=20,rel=False):
+def orbital_exp_decay(blocks,lambda_0=20,rel=False,only_Bi=False,only_Te=False):
         import pyfplo.common as com
 	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
         orbs_names = ['px','py','pz']
@@ -280,6 +285,7 @@ def orbital_exp_decay(blocks,lambda_0=20,rel=False):
 		ind_atom = 0
                 for block in blocks:
                         for atom in block:
+			    if(atom[1]!='Mn'):
                         	labels_atom = []
                                 site_index = atom[0]
                 		w=wds.add(name="""exp_decay_%(orb_name)s_%(site_index)s"""%locals())
@@ -296,19 +302,25 @@ def orbital_exp_decay(blocks,lambda_0=20,rel=False):
 
 				#determine label
                                 site = "{:03d}".format(site_index)
-                                if(atom[1]=='Bi'):
+                                if(atom[1]=='Bi' and not only_Te):
                                         for suffix in labp:
                                                 label = """Bi(%(site)s)6%(suffix)s"""%locals()
                                                 labels_atom.append(label)
-                                if(atom[1]=='Te'):
+                                if(atom[1]=='Te' and not only_Bi):
                                         for suffix in labp:
                                                 label = """Te(%(site)s)5%(suffix)s"""%locals()
                                                 labels_atom.append(label)
 				ind_atom += 1
-				if(atom[1]!='Mn'):
-                        		w.addLabels(labels=labels_atom,fac=weight)
+				if(len(labels_atom)>0):
+	                        	w.addLabels(labels=labels_atom,fac=weight)
+				print "w",w
                 bw=com.BandWeights('+bweights_mydef')
-                bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_lambda_%(lambda_0)s"""%locals())
+		output = """+bwsum_orb_%(orb_name)s_lambda_%(lambda_0)s"""%locals()
+		if(only_Bi):
+			output += "_onlyBi"
+		if(only_Te):
+			output += "_onlyTe"
+                bw.addWeights(wds,output)
 	file.close()
 
 def orbital_layer_weights_rel(blocks):
@@ -347,6 +359,19 @@ def orbital_layer_weights_rel(blocks):
 
 blocks = identify_blocks()
 #print_bwdef(blocks,rel=True)
-layer_weights(blocks,rel=True)
-orbital_layer_weights(blocks,rel=True)
-orbital_exp_decay(blocks,lambda_0=20,rel=True)
+layer_weights(blocks,rel=True,only_Bi=True)
+layer_weights(blocks,rel=True,only_Te=True)
+#orbital_layer_weights(blocks,rel=True)
+to_angs = 0.529177
+orbital_exp_decay(blocks,lambda_0=8/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=8/to_angs,rel=True,only_Bi=True)
+orbital_exp_decay(blocks,lambda_0=9/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=9/to_angs,rel=True,only_Bi=True)
+orbital_exp_decay(blocks,lambda_0=10/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=10/to_angs,rel=True,only_Bi=True)
+orbital_exp_decay(blocks,lambda_0=11/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=11/to_angs,rel=True,only_Bi=True)
+orbital_exp_decay(blocks,lambda_0=12/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=13/to_angs,rel=True,only_Bi=True)
+orbital_exp_decay(blocks,lambda_0=13/to_angs,rel=True,only_Te=True)
+orbital_exp_decay(blocks,lambda_0=12/to_angs,rel=True,only_Bi=True)
