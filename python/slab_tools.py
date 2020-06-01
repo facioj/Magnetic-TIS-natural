@@ -3,65 +3,65 @@
 
 to_ans = 0.529177
 
-def from_parser():
-	import pyfplo.fploio as fploio 
-	p=fploio.INParser()
-	p.parseFile("=.in")
-	d=p()
-	WP = d('wyckoff_positions')
+class my_slab():
 
-	my_list = []
+    def __init__(self,file_name,rel=False):
 
-	for i in range(48):
-   		index = i+1
-   		my_list.append([index,WP[i]('element').S,WP[i]('tau').listD])
+        self.rel = rel
+        self.N_atoms = -1
 
-	my_list.sort(key = lambda t: t[2][2])
-
-	return my_list
-
-def from_out(max_coor,vacuum):
-	L=max_coor*2#+vacuum
-	file = open("out",'r')
+	file = open(file_name,'r')
 	data = file.readlines()
 	file.close()
+
 	i = 0
 	block = []
 	for fila in data:
-		if "Atom sites" in fila:
-			block = data[i+6:i+6+48]
-			break
-		i+=1
-	my_list = []
+	    if "Atom sites" in fila:
+                sp = data[i+2]
+                vals = sp.split()
+                self.N_atoms = eval(vals[-1])
+		block = data[i+6:i+6+self.N_atoms]
+		break
+	    i+=1
+
+        print "Number of atoms in the slab: ", self.N_atoms
+        zetas = []
+        for b in block:
+            sp = b.split()
+            zetas.append(eval(sp[6]))
+
+        self.max_coor = max(zetas)
+        print "Max z coordinate: ", self.max_coor
+        L=self.max_coor*2
+
+	self.my_list = []
 	for b in block:
 		sp = b.split()
 		z=eval(sp[6])
 	        if(z<0):
 		  	z += L	
-		my_list.append([eval(sp[0]),sp[1],[eval(sp[4]),eval(sp[5]),z]])
+		self.my_list.append([eval(sp[0]),sp[1],[eval(sp[4]),eval(sp[5]),z]])
 
-	my_list.sort(key = lambda t: t[2][2])
-	return my_list
+	self.my_list.sort(key = lambda t: t[2][2])
 
-def identify_blocks():
-	#max_coor=113.163
-	max_coor=113.163704713339939
-	vac=30
-	my_list = from_out(max_coor,vac)
-	#my_list2 = from_parser() #this one needs to be changed because of c shift
 
-	Q1 = my_list[0:5] 
-	S1 = my_list[5:12] 
-	Q2 = my_list[12:17] 
-	S2 = my_list[17:24] 
-	Q3 = my_list[24:29] 
-	S3 = my_list[29:36] 
-	Q4 = my_list[36:41] 
-	S4 = my_list[41:48]
+    def identify_blocks(self):
+        """
+        This method for the moment is only for eight-layer MnBi4Te7.
+        """
+	Q1 = self.my_list[0:5] 
+	S1 = self.my_list[5:12] 
+	Q2 = self.my_list[12:17] 
+	S2 = self.my_list[17:24] 
+	Q3 = self.my_list[24:29] 
+	S3 = self.my_list[29:36] 
+	Q4 = self.my_list[36:41] 
+	S4 = self.my_list[41:48]
 
-	my_blocks = [Q1,S1,Q2,S2,Q3,S3,Q4,S4]
+	self.my_blocks = [Q1,S1,Q2,S2,Q3,S3,Q4,S4]
 
-	for block in my_blocks:
+	for block in self.my_blocks:
 		if(len(block)==5):
 			print "Q-block"
 		else:
@@ -69,10 +69,10 @@ def identify_blocks():
 		for i in range(len(block)):
 			print block[i][0]
 
-	return my_blocks
+	return self.my_blocks
 
 
-def make_string_def(site,element):
+    def make_string_def(self,site,element):
 
 	if(element == "Te" or element=="Bi"):
 
@@ -113,7 +113,7 @@ bwdef simple on
 		"""%locals()
 		return dstring
 
-def make_string_def_relativistic(site,element):
+    def make_string_def_relativistic(self,site,element):
 
 	if(element == "Te" or element=="Bi"):
 
@@ -172,7 +172,7 @@ bwdef simple on
 		"""%locals()
 		return dstring
 
-def print_bwdef(blocks,rel=False):
+    def print_bwdef(self):
 
 	name_file = "=.mydef"
 	if(rel):
@@ -181,24 +181,24 @@ def print_bwdef(blocks,rel=False):
 	print >> file, "coefficients +coeff\n"
 	print >> file, "bweights +bweights_mydef\n"
 
-	for b in blocks:
+	for b in self.my_blocks:
 		for atom in b:
-			if(rel):
+			if(self.rel):
 				print>> file,make_string_def_relativistic(atom[0],atom[1])
 			else:
 				print>> file,make_string_def(atom[0],atom[1])
 	file.close()
 
-def layer_weights(blocks,rel=False,only_Bi=False,only_Te=False):
+    def layer_weights(self,only_Bi=False,only_Te=False):
 	import pyfplo.common as com
 	wds=com.WeightDefinitions()
 
 	labp = ['p+1up','p+1dn','p+0up','p+0dn','p-1up','p-1dn']
-	if(rel):
+	if(self.rel):
 		labp = ['p3/2+3/2','p3/2-3/2','p3/2+1/2','p3/2-1/2','p1/2+1/2','p1/2-1/2']
 	labd = ['d+2up','d+2dn','d+1up','d+1dn','d+0up','d+0dn','d-1up','d-1dn','d-2up','d-2dn']
 	b_ind=0
-	for block in blocks:
+	for block in self.my_blocks:
 		length = len(block)
 		print length
                 if(length==5):
@@ -232,12 +232,12 @@ def layer_weights(blocks,rel=False,only_Bi=False,only_Te=False):
 		output+="_onlyTe"
         bw.addWeights(wds,output)
 
-def orbital_layer_weights(blocks,rel=False,ewindow=None):
+    def orbital_layer_weights(self,ewindow=None):
 	import pyfplo.common as com
 
 	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
 	orbs_names = ['px','py','pz']
-	if(rel):
+	if(self.rel):
 		orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
 		orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
 	b_ind = 0
@@ -245,7 +245,7 @@ def orbital_layer_weights(blocks,rel=False,ewindow=None):
 		orb_name = orbs_names[i]
 		labp = orbs[i]
 		wds=com.WeightDefinitions()
-		for block in blocks:
+		for block in self.my_blocks:
 			length = len(block)
                 	if(length==5):
 				name = """Q_%(b_ind)s"""%locals()
@@ -275,11 +275,11 @@ def orbital_layer_weights(blocks,rel=False,ewindow=None):
         		bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_emin_%(e_min)s_emax_%(e_max)s_layer_resolved"""%locals(),ewindow=ewindow)
 			
 
-def orbital_exp_decay(blocks,lambda_0=20,rel=False,only_Bi=False,only_Te=False):
+    def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False):
         import pyfplo.common as com
 	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
         orbs_names = ['px','py','pz']
-        if(rel):
+        if(self.rel):
                 orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
                 orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
 	z_coord_0 = -1000
@@ -290,7 +290,7 @@ def orbital_exp_decay(blocks,lambda_0=20,rel=False,only_Bi=False,only_Te=False):
                 labp = orbs[i]
                 wds=com.WeightDefinitions()
 		ind_atom = 0
-                for block in blocks:
+                for block in self.my_blocks:
                         for atom in block:
 			    if(atom[1]!='Mn'):
                         	labels_atom = []
@@ -330,37 +330,5 @@ def orbital_exp_decay(blocks,lambda_0=20,rel=False,only_Bi=False,only_Te=False):
                 bw.addWeights(wds,output)
 	file.close()
 
-def orbital_layer_weights_rel(blocks):
-	import pyfplo.common as com
-
-	labps = ['p3/2+3/2','p3/2-3/2','p3/2+1/2','p3/2-1/2','p1/2+1/2','p1/2-1/2']
-	labps2 = ['p32+32','p32-32','p32+12','p32-12','p12+12','p12-12']
-	b_ind = 0
-	for i in range(6):
-		orb_name = labps[i]
-		wds=com.WeightDefinitions()
-		suffix = orb_name
-		for block in blocks:
-			length = len(block)
-                	if(length==5):
-				name = """Q_%(b_ind)s"""%locals()
-			else:
-				name = """S_%(b_ind)s"""%locals()
-			w=wds.add(name=name)
-			labels_block = []
-			for atom in block:
-				site_index = atom[0]
-				site = "{:03d}".format(site_index)
-				if(atom[1]=='Bi'):
-					label = """Bi(%(site)s)6%(suffix)s"""%locals()
-					labels_block.append(label)
-				if(atom[1]=='Te'):
-					label = """Te(%(site)s)5%(suffix)s"""%locals()
-					labels_block.append(label)
-        		w.addLabels(labels=labels_block,fac=1)
-			b_ind += 1
-        	bw=com.BandWeights('+bweights_mydef')
-		orb_name = labps2[i]
-        	bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_layer_resolved"""%locals())
 
 
