@@ -26,6 +26,9 @@ class my_slab():
 	i = 0
 	block = []
 	for fila in data:
+	    if "lattice constants [aB]" in fila:
+		vals = fila.split()
+		self.c = eval(vals[-1])
 	    if "Atom sites" in fila:
                 sp = data[i+2]
                 vals = sp.split()
@@ -34,22 +37,15 @@ class my_slab():
 		break
 	    i+=1
 
+        print "c: ", self.c
         print "Number of atoms in the slab: ", self.N_atoms
-        zetas = []
-        for b in block:
-            sp = b.split()
-            zetas.append(eval(sp[6]))
-
-        self.max_coor = max(zetas)
-        print "Max z coordinate: ", self.max_coor
-        L=self.max_coor*2
 
 	self.my_list = []
 	for b in block:
 		sp = b.split()
 		z=eval(sp[6])
-	        if(z<0):
-		  	z += L	
+	        if(z<=0):
+		  	z += self.c
 		self.my_list.append([eval(sp[0]),sp[1],[eval(sp[4]),eval(sp[5]),z]])
 
 	self.my_list.sort(key = lambda t: t[2][2])
@@ -76,7 +72,7 @@ class my_slab():
 		else:
 			print "S-block"
 		for i in range(len(block)):
-			print block[i][0]
+			print "Atom: ",block[i][0],block[i][2][2]
 
 	return self.my_blocks
 
@@ -279,9 +275,14 @@ bwdef simple on
 			
 
     def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False):
+	"""
+	lamba_0: characteristic lenght for the exponential decay in Bohr
+	"""
         import pyfplo.common as com
-	z_coord_0 = -1000
 	import numpy as np
+
+	z_coord_0 = -1000
+
 	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
         for i in range(len(self.orbs)):
                 orb_name = self.orbs_names[i]
