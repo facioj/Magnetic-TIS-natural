@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 
-to_ans = 0.529177
+to_angs = 0.529177
 
 class my_slab():
 
@@ -273,17 +273,42 @@ bwdef simple on
 			e_max = ewindow[1]
         		bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_emin_%(e_min)s_emax_%(e_max)s_layer_resolved"""%locals(),ewindow=ewindow)
 			
+    def build_exp_decay_weight(self,lambda_0,from_septuple=False):
+	"""
+	Function that builds the exponential decay weight. For the moment, for the dafult is from the quintuple layer.
+
+	Returns: a dict from atom index to weight
+	"""
+	import numpy as np
+	z_coord_0 = -1000
+	self.weight = {}
+	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
+	ind_atom = 0
+        for block in self.my_blocks:
+		for atom in block:
+			site_index = atom[0]
+			z_coord = atom[2][2]
+			print "WARNING: this only works for quintuple layer termination"
+			if(ind_atom == 0):
+				z_coord_0 = z_coord
+			assert z_coord_0 != -1000
+
+			rel_z = (z_coord - z_coord_0)/lambda_0
+			weight = np.exp(-rel_z)
+			self.weight[site_index] = weight
+			print >> file, site_index,z_coord,rel_z,np.exp(-rel_z)
+			ind_atom +=1
+	file.close()
+	return self.weight
 
     def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False):
 	"""
 	lamba_0: characteristic lenght for the exponential decay in Bohr
 	"""
         import pyfplo.common as com
-	import numpy as np
 
-	z_coord_0 = -1000
+	self.build_exp_decay_weight(lambda_0)
 
-	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
         for i in range(len(self.orbs)):
                 orb_name = self.orbs_names[i]
                 labp = self.orbs[i]
@@ -295,16 +320,8 @@ bwdef simple on
                         	labels_atom = []
                                 site_index = atom[0]
                 		w=wds.add(name="""exp_decay_%(orb_name)s_%(site_index)s"""%locals())
-
-				#determine weight
-				z_coord = atom[2][2]
-				if(ind_atom == 0):
-					z_coord_0 = z_coord
-				assert z_coord_0 != -1000
-				rel_z = (z_coord - z_coord_0)/lambda_0
-				weight = np.exp(-rel_z)
-				if(i==0):
-					print >> file, z_coord,rel_z,np.exp(-rel_z)
+				
+				weight = self.weight[site_index]
 
 				#determine label
                                 site = "{:03d}".format(site_index)
@@ -327,7 +344,6 @@ bwdef simple on
 		if(only_Te):
 			output += "_onlyTe"
                 bw.addWeights(wds,output)
-	file.close()
 
 
 
