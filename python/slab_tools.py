@@ -10,6 +10,15 @@ class my_slab():
         self.rel = rel
         self.N_atoms = -1
 
+	#orbital names and labels
+	self.orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
+        self.orbs_names = ['px','py','pz']
+	if(self.rel):
+		self.orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
+		self.orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
+
+	self.labd = ['d+2up','d+2dn','d+1up','d+1dn','d+0up','d+0dn','d-1up','d-1dn','d-2up','d-2dn']
+
 	file = open(file_name,'r')
 	data = file.readlines()
 	file.close()
@@ -196,7 +205,6 @@ bwdef simple on
 	labp = ['p+1up','p+1dn','p+0up','p+0dn','p-1up','p-1dn']
 	if(self.rel):
 		labp = ['p3/2+3/2','p3/2-3/2','p3/2+1/2','p3/2-1/2','p1/2+1/2','p1/2-1/2']
-	labd = ['d+2up','d+2dn','d+1up','d+1dn','d+0up','d+0dn','d-1up','d-1dn','d-2up','d-2dn']
 	b_ind=0
 	for block in self.my_blocks:
 		length = len(block)
@@ -219,7 +227,7 @@ bwdef simple on
 					label = """Te(%(site)s)5%(suffix)s"""%locals()
 					labels_block.append(label)
 			if(atom[1]=='Mn' and rel==False and not only_Te and not only_Bi):
-				for suffix in labd:
+				for suffix in self.labd:
 					label = """Mn(%(site)s)3%(suffix)s"""%locals()
 					labels_block.append(label)
         	w.addLabels(labels=labels_block,fac=1)
@@ -235,15 +243,10 @@ bwdef simple on
     def orbital_layer_weights(self,ewindow=None):
 	import pyfplo.common as com
 
-	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
-	orbs_names = ['px','py','pz']
-	if(self.rel):
-		orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
-		orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
 	b_ind = 0
-	for i in range(len(orbs)):
-		orb_name = orbs_names[i]
-		labp = orbs[i]
+	for i in range(len(self.orbs)):
+		orb_name = self.orbs_names[i]
+		labp = self.orbs[i]
 		wds=com.WeightDefinitions()
 		for block in self.my_blocks:
 			length = len(block)
@@ -277,17 +280,12 @@ bwdef simple on
 
     def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False):
         import pyfplo.common as com
-	orbs = [['p+1up','p+1dn'], ['p-1up','p-1dn'], ['p+0up','p+0dn'] ]
-        orbs_names = ['px','py','pz']
-        if(self.rel):
-                orbs = [['p3/2+3/2'],['p3/2-3/2'],['p3/2+1/2'],['p3/2-1/2'],['p1/2+1/2'],['p1/2-1/2']]
-                orbs_names = ['32_32','32_-32','32_12','32_-12','12_12','12_-12']
 	z_coord_0 = -1000
 	import numpy as np
 	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
-        for i in range(len(orbs)):
-                orb_name = orbs_names[i]
-                labp = orbs[i]
+        for i in range(len(self.orbs)):
+                orb_name = self.orbs_names[i]
+                labp = self.orbs[i]
                 wds=com.WeightDefinitions()
 		ind_atom = 0
                 for block in self.my_blocks:
