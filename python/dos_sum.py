@@ -39,7 +39,9 @@ def sum_of_file(file_name,previous_dict=None):
 
 def print_dict(dictionary,output):
    file = open(output,'w')
-   for key  in dictionary:
+   keys = dictionary.keys()
+   sorted_keys = sorted(keys,key=lambda x: eval(x))
+   for key  in sorted_keys:
        print >> file, eval(key),dictionary[key]
    file.close()
 
@@ -95,4 +97,25 @@ class dos_sum:
 
         return dict_sum
 
+    def weighted_sum(self,list_of_sites,weight):
+
+        i = 0
+        dict_sum = {}
+        for site in list_of_sites:
+            label = """%(site)s"""%locals()
+	    w = weight[site]
+            if(i==0):
+                dict_sum = self.dicts[label]
+		for key  in dict_sum:
+			dict_sum[key] *= w
+            else:
+                for key  in dict_sum:
+                    dict_sum[key] += self.dicts[label][key] * w
+            i+=1
+
+        file_name = "weighted_dos.dat"
+
+        print_dict(dict_sum,file_name)
+
+        return dict_sum
 
