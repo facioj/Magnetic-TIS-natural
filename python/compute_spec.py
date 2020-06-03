@@ -2,16 +2,30 @@
 import numpy as np
 
 def get_func(k_center,enk,I,gamma,gamma_k):
+    """
+    Method that returns a product of lorentzian functions in energy and in momentum.
+
+    Args:
+
+    k_center: momentum center
+    enk: energy center
+    gamma: energy width
+    gamma_k: momentum width
+    """
 
     def lorentzian_k(k):
-       return  gamma_k**2 / ( (k-k_center)**2 + gamma_k**2)
+       return  1./np.pi * gamma_k / ( (k-k_center)**2 + gamma_k**2)
 
     def lorentzian(k,omega):
-       return I * gamma**2 / ( (omega-enk)**2 + gamma**2) * lorentzian_k(k)
+       return I * gamma / ( (omega-enk)**2 + gamma**2) * lorentzian_k(k)
 
     return lorentzian
 
 def compute_functions(file_name,E_max,E_min,gamma,gamma_k):
+    """
+    Method that for a given fat band file, computes all lorentzian functions that need to be added for simulating the spectral weight.
+    """
+
     file = open(file_name,'r')
     data = file.readlines()
     file.close()
@@ -32,10 +46,16 @@ def compute_functions(file_name,E_max,E_min,gamma,gamma_k):
     return all_lor
 
 def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=200,E_max=0.5,E_min=-0.5,Ne=200,gamma_k=0.002,gamma=0.004,lambda_0=20,orbital="pz",suffix=""):
+    """
+    Computes numerical summation of lorentzian functions in energy and momenta space.
+    """
+
+    #define energy and momentum domains
     dk = (kf-k0)/Nk
-    #initialize A
     momenta = np.linspace(k0, kf+dk, Nk)
     energies = np.linspace(E_min, E_max, Ne)
+
+    #initialize spectral function A_final to zero
     A_final = []
     for i_k in range(len(momenta)):
         I_e = []
@@ -43,13 +63,17 @@ def simulate_spectrum(file_name =  "bands_full.dat", k0=0,kf= 0.576,Nk=200,E_max
             I_e.append(0)
         A_final.append(I_e)
 
+    #compute all lorenztian functions
     all_lor = compute_functions(file_name,E_max,E_min,gamma,gamma_k)
+
+    #evaluate all functions
     print "Evaluating functions"
     for func in all_lor:
         s = np.vectorize(func)
         A = s(momenta[:,None],energies[None,:])
         A_final += A
 
+    #print output
     file_output = """A_gammak_%(gamma_k)s_gammae_%(gamma)s_Nk_%(Nk)s_Ne_%(Ne)s_lambda_%(lambda_0)s_%(orbital)s%(suffix)s"""%locals()
     file = open(file_output,'w')
     for i in range(len(momenta)):
