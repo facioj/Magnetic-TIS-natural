@@ -319,7 +319,7 @@ bwdef simple on
 			    if(atom[1]!='Mn'):
                         	labels_atom = []
                                 site_index = atom[0]
-                		w=wds.add(name="""exp_decay_%(orb_name)s_%(site_index)s"""%locals())
+                		w=wds.add(name="""exp_%(orb_name)s_%(site_index)s"""%locals())
 				
 				weight = self.weight[site_index]
 
@@ -345,5 +345,22 @@ bwdef simple on
 			output += "_onlyTe"
                 bw.addWeights(wds,output)
 
+	
+    def dos_exp_decay(self,atoms,dos_folder=".",lambda_0=20):
+	
+	weights = self.build_exp_decay_weight(lambda_0)
 
+	import dos_sum as DS
+	my_sum = DS.dos_sum(dos_folder,atoms)
+	my_sum.weighted_sum(atoms,weights)
 
+    def orbital_dos_exp_decay(self,atoms,orbitals,dos_folder=".",lambda_0=20):
+	
+	weights = self.build_exp_decay_weight(lambda_0)
+
+	import dos_sum as DS
+	my_sum = DS.dos_sum(dos_folder,atoms,orbitals)
+	my_sum.weighted_orb_sum(atoms,orbitals,weights)
+#	for site in atoms:
+#		for orbital in orbitals:
+#			my_sum.sum_site_orbital_bdos(site,orbital)
