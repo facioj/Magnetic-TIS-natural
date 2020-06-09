@@ -3,7 +3,7 @@
 import sys,os
 
 
-def list_files(directory = "./", site = 0):
+def list_files(directory = "./", site = 0,type_file="lj"):
    all_files_in_diretory = os.listdir(directory)
 
    if site < 10:
@@ -11,13 +11,21 @@ def list_files(directory = "./", site = 0):
    else:
        stringsite = """site0%(site)s"""%locals()
 
-   files_of_site = ["""%(directory)s/%(a)s"""%locals() for a in all_files_in_diretory if (stringsite in a and "ldos" and "lj" in a)]
+   files_of_site = ["""%(directory)s/%(a)s"""%locals() for a in all_files_in_diretory if (stringsite in a and "dos" in a and type_file in a)]
+   if(type_file == "lj"):
+	return files_of_site
+   else:
+	new_file_set = []
+	for e in files_of_site:
+		if("lj" not in e):
+			new_file_set.append(e)
+	print new_file_set
+	return new_file_set
 
-   return files_of_site 
 
 def filter_files_of_site(files_of_site,orbital_name,bdos=False):
    filtered_set = []
-
+   print "orbital name", orbital_name
    for file_ in files_of_site:
 	file = open(file_,'r')
         data = file.readlines()
@@ -28,7 +36,7 @@ def filter_files_of_site(files_of_site,orbital_name,bdos=False):
 				filtered_set.append(file_)
 		else:
 			filtered_set.append(file_)
-	
+   print filtered_set	
    return filtered_set
 
 def sum_of_file(file_name,previous_dict=None):
@@ -72,9 +80,9 @@ def print_dict(dictionary,output):
 
 class dos_sum:
 
-    def sum_site_orbital_bdos(self,site,orbital_name):
+    def sum_site_orbital_bdos(self,site,orbital_name,type_="lj"):
 	
-        files_site = list_files(directory = self.directory,site = site)
+        files_site = list_files(directory = self.directory,site = site,type_file=self.type_file)
 	files_site_orbital = filter_files_of_site(files_site,orbital_name,bdos=True)
 	if(len(files_site_orbital) > 0):
 	        print "\nFiles to sum: ", files_site_orbital,"\n"
@@ -96,7 +104,7 @@ class dos_sum:
 		return None
 
     def sum_site(self,site):
-        files_site = list_files(directory = self.directory,site = site)
+        files_site = list_files(directory = self.directory,site = site,type_file=self.type_file)
         print "\nFiles to sum: ", files_site,"\n"
 
         dic_site = {}
@@ -116,10 +124,11 @@ class dos_sum:
         return dic_site
 
 
-    def __init__(self,directory,sites,orbitals=None):
+    def __init__(self,directory,sites,orbitals=None,type_file="lj"):
         self.dicts = {}
         self.directory = directory
         self.sites = sites
+	self.type_file = type_file
 	print "Orbitals: ",orbitals
         for site in self.sites:
 		if(orbitals==None):

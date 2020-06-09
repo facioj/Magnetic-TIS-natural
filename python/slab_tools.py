@@ -354,12 +354,12 @@ bwdef simple on
 	my_sum = DS.dos_sum(dos_folder,atoms)
 	my_sum.weighted_sum(atoms,weights)
 
-    def orbital_dos_exp_decay(self,atoms,orbitals,dos_folder=".",lambda_0=20):
+    def orbital_dos_exp_decay(self,atoms,orbitals,dos_folder=".",lambda_0=20,type_file="lj"):
 	
 	weights = self.build_exp_decay_weight(lambda_0)
 
 	import dos_sum as DS
-	my_sum = DS.dos_sum(dos_folder,atoms,orbitals)
+	my_sum = DS.dos_sum(dos_folder,atoms,orbitals,type_file=type_file)
 	my_sum.weighted_orb_sum(atoms,orbitals,weights)
 #	for site in atoms:
 #		for orbital in orbitals:
