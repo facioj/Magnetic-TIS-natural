@@ -61,7 +61,7 @@
 
 \section{Details of the density-functional calculations}
 
-The structural model of the density-functional calculations (DFT) consists of four MnBi$_4$Te$_7$ unit cells and of a vacuum of 30 Bohr radii (Fig. \ref{dft_structure}a). We use the experimental bulk lattice parameters and atomic positions.
+The structural model used in the density-functional calculations (DFT) consists of four MnBi$_4$Te$_7$ unit cells and of a vacuum of 30 Bohr radii (Fig. \ref{dft_structure}a). We use the experimental bulk lattice parameters and atomic positions.
 The calculations are based on the GGA+U method with the generalized grandient approximation \cite{perdew1996generalized} as implemented in the FPLO code version 48.00-52 \cite{PhysRevB.59.1743}. We fix parameters $U=5.34\,$eV and $J=0$, as in Ref. \cite{otrokov2019prediction} and use the atomic limit flavor for the double counting correction. The spin-orbit interaction is considered in the fully-relativistic four-component formalism. Numerial k-space integrations are performed with a tetrahedron method with a mesh of $12\times12\times1$ subdivisions in the Brillouin zone. For the calculations of the density of states (DOS), we consider a mesh of $30\times30\times1$ subdivisions.
 
 For the simulation of the orbital-projected surface spectral density in Fig. 3 of the main text, we take into account all Bloch states in the slab, weighting their contribution with an exponentially decaying factor (Fig. \ref{dft_structure}b). Specifically, denoting the local orbitals as $|\phi^{(z)}_{jm}\rangle$, where $z$ is the distance from the orbital center to the surface, for each Bloch state $|\psi_{k_0\nu}\rangle$ of energy $\varepsilon_{k_0\nu}$, we consider as its contribution 
@@ -79,7 +79,7 @@ where $\lambda=10\,$\AA, $\Delta_\varepsilon=20\,$meV and $\Delta_k=0.005$\AA$^{
 
 \section{Surface DOS}
 
-Fig. \ref{dft_dos} shows the orbital-projected DOS corresponding to different parts of the slab. Specifically, we consider the projection of the total DOS on the inner-most unit-cell as representative of the bulk, while for the surface DOS we sum the local DOS of all of the atoms in the slab weighted by a function that  exponential decays from the corresponding surface.
+Fig. \ref{dft_dos} shows the orbital-projected DOS corresponding to different parts of the slab. Specifically, we consider the projection of the total DOS on the inner-most unit-cell as representative of the bulk, while for the surface DOS we sum the local DOS of all of the atoms in the slab weighted by a function that  exponentially decays from the corresponding surface.
 While Bi-$6p$ and Te-$5p$ in all cases provide the leading contributions, the different electronic structure at the two terminations reflects in the apperance of stronger hybridization effects for the surface with quintuple layer termination.
 
 \begin{figure*}[h!]
