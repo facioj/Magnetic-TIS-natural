@@ -272,7 +272,29 @@ bwdef simple on
 			e_min = ewindow[0]
 			e_max = ewindow[1]
         		bw.addWeights(wds,"""+bwsum_orb_%(orb_name)s_emin_%(e_min)s_emax_%(e_max)s_layer_resolved"""%locals(),ewindow=ewindow)
-			
+
+    def build_bulk_weight(self):
+        self.weight = {}
+        file_name = """weight_bulk.dat"""%locals()
+        file = open(file_name,'w')
+
+        for i in range(49):
+            self.weight[i] = 0
+
+        ind_atom = 0
+        blocks_bulk = [3,4]
+        for i_block in blocks_bulk:
+                block = self.my_blocks[i_block]
+		for atom in block:
+			site_index = atom[0]
+			z_coord = atom[2][2]
+			self.weight[site_index] = 1
+			print >> file, site_index,z_coord,1.0
+			ind_atom +=1
+	file.close()
+	return self.weight
+
+
     def build_exp_decay_weight(self,lambda_0,from_septuple=False):
 	"""
 	Function that builds the exponential decay weight. For the moment, for the dafult is from the quintuple layer.
@@ -282,9 +304,15 @@ bwdef simple on
 	import numpy as np
 	z_coord_0 = -1000
 	self.weight = {}
-	file = open("""weight_lambda_%(lambda_0)s.dat"""%locals(),'w')
-	ind_atom = 0
-        for block in self.my_blocks:
+        file_name = """weight_lambda_%(lambda_0)s_from_QL.dat"""%locals()
+        if(from_septuple):
+            file_name = """weight_lambda_%(lambda_0)s_from_SL.dat"""%locals()
+
+        file = open(file_name,'w')
+
+        ind_atom = 0
+        if(from_septuple==False):        
+            for block in self.my_blocks:
 		for atom in block:
 			site_index = atom[0]
 			z_coord = atom[2][2]
@@ -298,16 +326,31 @@ bwdef simple on
 			self.weight[site_index] = weight
 			print >> file, site_index,z_coord,rel_z,np.exp(-rel_z)
 			ind_atom +=1
+        else:
+            for block in reversed(self.my_blocks):
+		for atom in reversed(block):
+			site_index = atom[0]
+			z_coord = atom[2][2]
+			print "WARNING: this only works for quintuple layer termination"
+			if(ind_atom == 0):
+				z_coord_0 = z_coord
+			assert z_coord_0 != -1000
+
+			rel_z = abs(z_coord - z_coord_0)/lambda_0
+			weight = np.exp(-rel_z)
+			self.weight[site_index] = weight
+			print >> file, site_index,z_coord,rel_z,np.exp(-rel_z)
+			ind_atom +=1
 	file.close()
 	return self.weight
 
-    def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False):
+    def orbital_exp_decay(self,lambda_0=20,only_Bi=False,only_Te=False,from_septuple=False):
 	"""
 	lamba_0: characteristic lenght for the exponential decay in Bohr
 	"""
         import pyfplo.common as com
 
-	self.build_exp_decay_weight(lambda_0)
+	self.build_exp_decay_weight(lambda_0,from_septuple)
 
         for i in range(len(self.orbs)):
                 orb_name = self.orbs_names[i]
@@ -354,13 +397,18 @@ bwdef simple on
 	my_sum = DS.dos_sum(dos_folder,atoms)
 	my_sum.weighted_sum(atoms,weights)
 
-    def orbital_dos_exp_decay(self,atoms,orbitals,dos_folder=".",lambda_0=20,type_file="lj"):
+    def orbital_dos_exp_decay(self,atoms,orbitals,dos_folder=".",lambda_0=20,type_file="lj",from_septuple=False):
 	
-	weights = self.build_exp_decay_weight(lambda_0)
+	weights = self.build_exp_decay_weight(lambda_0,from_septuple)
 
 	import dos_sum as DS
 	my_sum = DS.dos_sum(dos_folder,atoms,orbitals,type_file=type_file)
 	my_sum.weighted_orb_sum(atoms,orbitals,weights)
-#	for site in atoms:
-#		for orbital in orbitals:
-#			my_sum.sum_site_orbital_bdos(site,orbital)
+
+    def orbital_dos_bulk(self,atoms,orbitals,dos_folder=".",type_file="lj"):
+	
+	weights = self.build_bulk_weight()
+
+	import dos_sum as DS
+	my_sum = DS.dos_sum(dos_folder,atoms,orbitals,type_file=type_file)
+	my_sum.weighted_orb_sum(atoms,orbitals,weights)
