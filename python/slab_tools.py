@@ -76,6 +76,26 @@ class my_slab():
 
 	return self.my_blocks
 
+    def identify_blocks_124(self):
+        """
+        This method for the moment is only for six-layer MnBi2Te4.
+        """
+	S1 = self.my_list[0:7] 
+	S2 = self.my_list[7:14] 
+	S3 = self.my_list[14:21] 
+	S4 = self.my_list[21:28] 
+	S5 = self.my_list[28:35] 
+	S6 = self.my_list[35:42] 
+
+	self.my_blocks = [S1,S2,S3,S4,S5,S6]
+
+	for block in self.my_blocks:
+		print "S-block"
+		for i in range(len(block)):
+			print "Atom: ",block[i][0],block[i][2][2]
+
+	return self.my_blocks
+
 
     def make_string_def(self,site,element):
 
@@ -118,6 +138,48 @@ bwdef simple on
 		"""%locals()
 		return dstring
 
+    def make_string_def_for_dos(self,site,element):
+
+	if(element == "Te" or element=="Bi"):
+
+		if(element == "Te"):
+			n=5
+		else:
+			n=6
+
+		pstring="""
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital %(n)ss
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital %(n)sp
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
+		"""%locals()
+		return pstring
+	else:
+		dstring="""
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital 3d
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital 4s
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
+
+		"""%locals()
+		return dstring
+
     def make_string_def_relativistic(self,site,element):
 
 	if(element == "Te" or element=="Bi"):
@@ -128,6 +190,12 @@ bwdef simple on
 			n=6
 
 		pstring="""
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital %(n)ss
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
 bwdef simple on
     contrib
         site %(site)s
@@ -174,24 +242,36 @@ bwdef simple on
         orbital 3d
         xaxis 1. 0. 0.
         zaxis 0. 0. 1.
+bwdef simple on
+    contrib
+        site %(site)s
+        orbital 4s
+        xaxis 1. 0. 0.
+        zaxis 0. 0. 1.
+
 		"""%locals()
 		return dstring
 
-    def print_bwdef(self):
+    def print_bwdef(self,for_dos=False):
 
 	name_file = "=.mydef"
-	if(rel):
+	if(self.rel):
 		name_file = "=.mydef_rel"
+	if(for_dos):
+		name_file = "=.mydef_dos"
 	file = open(name_file,'w')
 	print >> file, "coefficients +coeff\n"
 	print >> file, "bweights +bweights_mydef\n"
 
 	for b in self.my_blocks:
 		for atom in b:
+                    if(not for_dos):
 			if(self.rel):
-				print>> file,make_string_def_relativistic(atom[0],atom[1])
+				print>> file,self.make_string_def_relativistic(atom[0],atom[1])
 			else:
-				print>> file,make_string_def(atom[0],atom[1])
+				print>> file,self.make_string_def(atom[0],atom[1])
+		    else:
+			print>> file,self.make_string_def_for_dos(atom[0],atom[1])
 	file.close()
 
     def layer_weights(self,only_Bi=False,only_Te=False):
@@ -222,12 +302,13 @@ bwdef simple on
 				for suffix in labp:
 					label = """Te(%(site)s)5%(suffix)s"""%locals()
 					labels_block.append(label)
-			if(atom[1]=='Mn' and rel==False and not only_Te and not only_Bi):
+			if(atom[1]=='Mn' and self.rel==False and not only_Te and not only_Bi):
 				for suffix in self.labd:
 					label = """Mn(%(site)s)3%(suffix)s"""%locals()
 					labels_block.append(label)
         	w.addLabels(labels=labels_block,fac=1)
 		print "w",w
+		b_ind+=1
         bw=com.BandWeights('+bweights_mydef')
 	output = '+bwsum_layer_resolved'
 	if(only_Bi):
